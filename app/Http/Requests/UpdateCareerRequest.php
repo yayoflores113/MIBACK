@@ -11,7 +11,6 @@ class UpdateCareerRequest extends FormRequest
 {
     public const LEVELS     = StoreCareerRequest::LEVELS;
     public const MODALITIES = StoreCareerRequest::MODALITIES;
-    public const AREAS      = StoreCareerRequest::AREAS;
 
     public function authorize(): bool
     {
@@ -70,7 +69,7 @@ class UpdateCareerRequest extends FormRequest
             'levels'          => ['sometimes', 'array', 'min:1'],
             'levels.*'        => ['string', \Illuminate\Validation\Rule::in(self::LEVELS)],
             'modality'        => ['sometimes', 'nullable', 'string', \Illuminate\Validation\Rule::in(self::MODALITIES)],
-            'area'            => ['sometimes', 'nullable', 'string', \Illuminate\Validation\Rule::in(self::AREAS)],
+            'area' => ['sometimes', 'nullable', 'string', 'max:120'],
             'duration_months' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:120'],
             'duration_terms'              => ['sometimes', 'array'],
             'duration_terms.*.level'      => ['required_with:duration_terms', 'string', \Illuminate\Validation\Rule::in(self::LEVELS)],
