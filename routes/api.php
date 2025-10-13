@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\TestController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\AnswerOptionController;
+use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\TestAttemptController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\SubscriptionController;
@@ -27,6 +28,8 @@ Route::prefix('v1')->group(function () {
 
     // ::auth
     Route::post('/auth/register', [AuthController::class, 'register']);
+    // Paises
+    Route::get('/public/countries', [CountryController::class, 'index']);
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
     Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback']);

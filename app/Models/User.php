@@ -25,6 +25,10 @@ class User extends Authenticatable
         'password',
         'provider',
         'provider_id',
+        'birth_date', 
+        'university_id', 
+        'matricula', 
+        'country_id',
     ];
 
     /**
