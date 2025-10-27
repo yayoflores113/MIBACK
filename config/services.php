@@ -49,7 +49,11 @@ return [
     'tenant'             => env('MICROSOFT_TENANT_ID', 'common'), // common|organizations|consumers
 ],
 
-
+'stripe' => [
+    'key' => env('STRIPE_KEY'),
+    'secret' => env('STRIPE_SECRET'),
+    'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+],
 
 // LÍNEA ES LA QUE FALTA
     'frontend_redirect' => env('FRONTEND_URL', 'http://localhost:5173') . '/auth/callback',

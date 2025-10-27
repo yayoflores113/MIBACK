@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\FrontController;
 use App\Http\Controllers\MetabaseController;
 use App\Http\Controllers\StripeController;
+use App\Http\Controllers\Api\DailyExerciseController;
+use App\Http\Controllers\Api\Public\LearningPathController;
 
 Route::prefix('v1')->group(function () {
 
@@ -61,6 +63,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/courses',        [FrontController::class, 'cursos']);
     Route::get('/public/courses/{slug}', [FrontController::class, 'curso'])->where('slug', '^[a-z0-9-]+$');
 
+    // Learning Paths (Rutas de Aprendizaje)
+    Route::get('/public/learning-paths',        [LearningPathController::class, 'index'])->name('public.learning-paths.index');
+    Route::get('/public/learning-paths/{slug}', [LearningPathController::class, 'show'])->where('slug', '^[a-z0-9-]+$')->name('public.learning-paths.show');
+
     // Planes
     Route::get('/public/plans',        [PlanController::class, 'index']);
     Route::get('/public/plans/{slug}', [PlanController::class, 'showBySlug'])->where('slug', '^[a-z0-9-]+$');
@@ -89,6 +95,14 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('user/subscriptions', SubscriptionController::class)->only(['index', 'show'])->names('user.subscriptions');
     Route::apiResource('user/payments',      PaymentController::class)->only(['index', 'show'])->names('user.payments');
 
+    // Daily Exercises (usuario autenticado)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('user/daily-exercise/today', [DailyExerciseController::class, 'getTodayExercise'])->name('user.daily-exercise.today');
+        Route::post('user/daily-exercise/submit', [DailyExerciseController::class, 'submitAnswer'])->name('user.daily-exercise.submit');
+        Route::get('user/streak', [DailyExerciseController::class, 'getUserStreak'])->name('user.streak');
+        Route::get('user/daily-exercise/history', [DailyExerciseController::class, 'getHistory'])->name('user.daily-exercise.history');
+    });
+
     // =======================
     // ADMIN
     // =======================
@@ -111,8 +125,9 @@ Route::prefix('v1')->group(function () {
     Route::post('admin/users/{user}/deactivate',    [UserController::class, 'deactivate'])->name('admin.users.deactivate');
     Route::post('admin/users/{user}/activate',      [UserController::class, 'activate'])->name('admin.users.activate');
     Route::post('admin/users/{user}/revoke-tokens', [UserController::class, 'revokeTokens'])->name('admin.users.revoke-tokens');
-});
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+    // Daily Exercises (admin)
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+        Route::apiResource('admin/daily-exercises', DailyExerciseController::class)->names('admin.daily-exercises');
+    });
 });

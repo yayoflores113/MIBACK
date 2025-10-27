@@ -15,6 +15,7 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
+        "bootstrap": "^5.3.8",
         "stripe": "^19.1.0"
     }
 }
