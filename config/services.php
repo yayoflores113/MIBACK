@@ -36,24 +36,24 @@ return [
     ],
 
     'google' => [
-    'client_id'     => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect'      => env('GOOGLE_REDIRECT'),
-],
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT'),
+    ],
 
     'microsoft' => [
-    'client_id'          => env('MICROSOFT_CLIENT_ID'),
-    'client_secret'      => env('MICROSOFT_CLIENT_SECRET'),
-    'redirect'           => env('MICROSOFT_REDIRECT_URI'),
-    // Opcionales y útiles en dev:
-    'tenant'             => env('MICROSOFT_TENANT_ID', 'common'), // common|organizations|consumers
-],
+        'client_id' => env('MICROSOFT_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+        'redirect' => env('MICROSOFT_REDIRECT_URI'),
+        'tenant' => env('MICROSOFT_TENANT_ID', 'common'),
+    ],
+    
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY', ''),
+    ],
 
-'stripe' => [
-    'key' => env('STRIPE_KEY'),
-    'secret' => env('STRIPE_SECRET'),
-    'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-],
+
 
 // LÍNEA ES LA QUE FALTA
     'frontend_redirect' => env('FRONTEND_URL', 'http://localhost:5173') . '/auth/callback',
