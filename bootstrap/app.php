@@ -11,14 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
-        // Importante para flujo por BEARER TOKEN:
-        // - No llamar $middleware->statefulApi()
-        // - Mantener el grupo "api" sin CSRF
+    ->withMiddleware(function (Middleware $middleware): void {
+    $middleware->statefulApi(); // <- ESENCIAL para SPA con cookies
+})
 
-        // Puedes dejar CORS global (Laravel ya registra HandleCors de forma global).
-        // Aquí no es necesario tocar nada más.
-    })
     ->withExceptions(function (Exceptions $exceptions) {
         // Aquí puedes registrar renderables si los necesitas
     })->create();
