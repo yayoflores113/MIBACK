@@ -13,81 +13,121 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $response = ["success" => false];
-
         $validator = Validator::make($request->all(), [
             'name'     => 'required',
-            'email'    => 'required|email',
-            'password' => 'required',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:8',
         ]);
 
         if ($validator->fails()) {
-            $response = ["error" => $validator->errors()];
-            return response()->json($response, 200);
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $input = $request->all();
-        $input["password"] = bcrypt($input['password']);
-
-        $user = User::create($input);
-        $user->assignRole('user');
-
-        $response["success"] = true;
-        return response()->json($response, 200);
-    }
-
-    public function login(Request $request)
-    {
-        $response = ["success" => false];
-        $response = ['message' => "Logueado"];
-
-        $validator = Validator::make($request->all(), [
-            'email'    => 'required|email',
-            'password' => 'required',
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
         ]);
 
-        if ($validator->fails()) {
-            $response = ["error" => $validator->errors()];
-            return response()->json($response, 200);
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole('user');
         }
 
-        if (auth()->attempt(['email' => $request->email, 'password' => $request->password])) {
-            $user = auth()->user();
-            $user->hasRole('user'); /// add rol 
+        // Autenticar automáticamente después del registro
+        Auth::login($user);
+        $request->session()->regenerate();
 
-            $response['token']   = $user->createToken("MI")->plainTextToken;
-            $response['user']    = $user;
-            $response['message'] = "Logueado";
-            $response['success'] = true;
-        } else {
-            $response['message'] = "Correo o Contraseña incorrectos";
-            $response['success'] = false;
-        }
-
-        return response()->json($response, 200);
-    }
-
-    public function logout()
-    {
-        Auth::logout();
-        return response()->json(["message" => "Cerraste sesion"]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Usuario registrado exitosamente',
+            'user' => $user,
+            'rol' => 'user',
+            'token' => null, // Añadido para consistencia
+        ], 201);
     }
 
     /**
-     * Redirige al proveedor OAuth (google, microsoft, github, etc.)
+    * Login con EMAIL/PASSWORD (Sanctum Stateful - NO tokens)
+    */
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Intentar autenticar
+        if (Auth::attempt($request->only('email', 'password'))) {
+            $request->session()->regenerate();
+            
+            $user = Auth::user();
+            
+            // Obtener el rol usando Spatie
+            $rol = 'user'; // valor por defecto
+            if (method_exists($user, 'getRoleNames')) {
+                $roleNames = $user->getRoleNames();
+                $rol = $roleNames->first() ?? 'user';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logueado exitosamente',
+                'user' => $user,
+                'rol' => $rol,
+                'token' => null, // Esto evita el "undefined" en frontend
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Correo o Contraseña incorrectos'
+        ], 401);
+    }
+
+    /**
+     * Logout (Invalida la sesión)
+     */
+    public function logout(Request $request)
+    {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesión cerrada exitosamente'
+        ], 200);
+    }
+
+    /**
+     * Redirige al proveedor OAuth (Google, Microsoft)
      */
     public function redirectToProvider(string $provider)
     {
-        // Opcional: whitelist para evitar providers no configurados
         $allowed = ['google', 'microsoft'];
-        abort_unless(in_array($provider, $allowed, true), 404);
+        
+        if (!in_array($provider, $allowed, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proveedor no permitido'
+            ], 404);
+        }
 
         return Socialite::driver($provider)->stateless()->redirect();
     }
 
     /**
-     * Callback genérico: crea/vincula usuario y emite token Sanctum,
-     * luego redirige al SPA con ?token=...&new=0|1 (o ?error=...)
+     * Callback OAuth - Autentica por SESIÓN (NO tokens)
      */
     public function handleProviderCallback(Request $request, string $provider)
     {
@@ -98,12 +138,12 @@ class AuthController extends Controller
             $name       = $socialUser->getName() ?: ($socialUser->user['name'] ?? 'Usuario');
             $email      = $socialUser->getEmail();
 
-            // Si el proveedor no entrega email, generamos uno sintético estable
+            // Si no hay email, generar uno sintético
             if (!$email) {
                 $email = "{$provider}-{$providerId}@no-email.local";
             }
 
-            // Buscar por email y vincular provider/provider_id; si no existe, crear
+            // Buscar o crear usuario
             $wasNew = false;
             $user   = User::where('email', $email)->first();
 
@@ -113,7 +153,7 @@ class AuthController extends Controller
                     'email'       => $email,
                     'provider'    => $provider,
                     'provider_id' => $providerId,
-                    'password'    => bcrypt(str()->random(40)), // no se usa en social
+                    'password'    => bcrypt(str()->random(40)),
                 ]);
                 $wasNew = true;
 
@@ -121,7 +161,7 @@ class AuthController extends Controller
                     $user->assignRole('user');
                 }
             } else {
-                // Garantiza la vinculación si aún no existe
+                // Actualizar provider si no existe
                 $needsSave = false;
                 if (!$user->provider) {
                     $user->provider = $provider;
@@ -136,36 +176,62 @@ class AuthController extends Controller
                 }
             }
 
-            // Crea token personal de Sanctum y reenvía al SPA
-            $token = $user->createToken('MI')->plainTextToken;
+            // CRÍTICO: Autenticar por SESIÓN (Sanctum Stateful)
+            Auth::login($user);
+            $request->session()->regenerate();
 
-            $redirectBase = config('services.frontend_redirect'); // p.ej. http://localhost:5173/auth/callback
-            $qs = http_build_query([
-                'token'    => $token,
-                'new'      => $wasNew ? 1 : 0,
+            // Obtener rol
+            $rol = 'user';
+            if (method_exists($user, 'getRoleNames')) {
+                $roleNames = $user->getRoleNames();
+                $rol = $roleNames->first() ?? 'user';
+            }
+
+            // CAMBIO IMPORTANTE: Redirigir a una ruta específica del frontend
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            
+            // Codificar datos del usuario en base64 para pasarlos de forma segura
+            $userData = base64_encode(json_encode([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
                 'provider' => $provider,
-            ]);
+                'new' => $wasNew,
+                'rol' => $rol
+            ]));
 
-            return redirect("{$redirectBase}?{$qs}");
+            return redirect("{$frontendUrl}/auth/callback?data={$userData}");
+
         } catch (\Throwable $e) {
-            \Log::error("{$provider} OAuth error", [
-                'msg'   => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'query' => $request->query(),
+            \Log::error("OAuth {$provider} error", [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
             ]);
 
-            $redirectBase = config('services.frontend_redirect');
-            $qs = http_build_query([
-                'error' => "{$provider}_auth_failed",
-                'msg'   => 'No fue posible autenticar con ' . ucfirst($provider),
-            ]);
-            return redirect("{$redirectBase}?{$qs}");
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            
+            return redirect("{$frontendUrl}/login?error=auth_failed&provider={$provider}");
         }
     }
 
+    /**
+     * Obtener usuario autenticado
+     */
     public function me(Request $request)
     {
-        $user = $request->user()->loadMissing('roles:id,name'); // spatie/permission
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autenticado'
+            ], 401);
+        }
+
+        // Cargar roles si usas Spatie
+        if (method_exists($user, 'loadMissing')) {
+            $user->loadMissing('roles:id,name');
+        }
 
         return response()->json([
             'success' => true,
