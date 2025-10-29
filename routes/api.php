@@ -23,7 +23,7 @@ use App\Http\Controllers\StripeController;
 
 use App\Http\Controllers\Api\DailyExerciseController;
 use App\Http\Controllers\Api\Public\LearningPathController;
-
+use App\Http\Controllers\Api\V1\CheckoutController;
 Route::prefix('v1')->group(function () {
 
    
@@ -151,3 +151,12 @@ Route::middleware('auth:sanctum')->get('/notificaciones', [NotificacionesControl
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// ✅ Rutas de checkout (V1)
+Route::prefix('v1')->group(function () {
+    Route::post('/checkout', [CheckoutController::class, 'createSession']);
+});
+
+// ✅ Webhook de Stripe (sin auth, sin CSRF)
+Route::post('/stripe/webhook', [CheckoutController::class, 'webhook']);
+
