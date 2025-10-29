@@ -20,8 +20,12 @@ use App\Http\Controllers\Api\FrontController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\MetabaseController;
 use App\Http\Controllers\StripeController;
+<<<<<<< HEAD
 use App\Http\Controllers\Api\DailyExerciseController;
 use App\Http\Controllers\Api\Public\LearningPathController;
+=======
+use App\Http\Controllers\Api\NotificacionesController;
+>>>>>>> 1cf2757 (Mis cambios para MIBACK)
 
 Route::prefix('v1')->group(function () {
 
@@ -149,7 +153,16 @@ Route::prefix('v1')->group(function () {
     Route::post('admin/users/{user}/activate',      [UserController::class, 'activate'])->name('admin.users.activate');
     Route::post('admin/users/{user}/revoke-tokens', [UserController::class, 'revokeTokens'])->name('admin.users.revoke-tokens');
 });
+Route::middleware('auth:sanctum')->get('/notificaciones', [NotificacionesController::class, 'getNotificaciones']);
 
+<<<<<<< HEAD
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+=======
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notificaciones', [NotificacionesController::class, 'getNotificaciones']);
+    Route::post('/notificaciones/send', [NotificacionesController::class, 'send']);
+});
+>>>>>>> 1cf2757 (Mis cambios para MIBACK)
