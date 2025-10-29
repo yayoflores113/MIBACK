@@ -20,18 +20,13 @@ use App\Http\Controllers\Api\FrontController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\MetabaseController;
 use App\Http\Controllers\StripeController;
-<<<<<<< HEAD
+
 use App\Http\Controllers\Api\DailyExerciseController;
 use App\Http\Controllers\Api\Public\LearningPathController;
-=======
-use App\Http\Controllers\Api\NotificacionesController;
->>>>>>> 1cf2757 (Mis cambios para MIBACK)
-
+use App\Http\Controllers\Api\V1\CheckoutController;
 Route::prefix('v1')->group(function () {
 
-    // =======================
-    // PUBLIC
-    // =======================
+   
 
     // ::auth
     Route::post('auth/login', [AuthController::class, 'login']);
@@ -95,9 +90,7 @@ Route::prefix('v1')->group(function () {
     // Catch-all: DEBE IR AL FINAL PARA NO INTERCEPTAR RUTAS REALES
     Route::get('/public/{slug}', [FrontController::class, 'categoria'])->where('slug', '^[a-z0-9-]+$');
 
-    // =======================
-    // PRIVATE (auth:sanctum)
-    // =======================
+   
 
     // Daily Exercises (usuario autenticado)
     Route::middleware(['auth:sanctum'])->group(function () {
@@ -124,9 +117,8 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('user/subscriptions', SubscriptionController::class)->only(['index', 'show'])->names('user.subscriptions');
     Route::apiResource('user/payments',      PaymentController::class)->only(['index', 'show'])->names('user.payments');
 
-    // =======================
-    // ADMIN
-    // =======================
+    
+    
 
     // Daily Exercises (admin)
     Route::middleware(['auth:sanctum', 'admin'])->group(function () {
@@ -155,14 +147,16 @@ Route::prefix('v1')->group(function () {
 });
 Route::middleware('auth:sanctum')->get('/notificaciones', [NotificacionesController::class, 'getNotificaciones']);
 
-<<<<<<< HEAD
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-=======
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/notificaciones', [NotificacionesController::class, 'getNotificaciones']);
-    Route::post('/notificaciones/send', [NotificacionesController::class, 'send']);
+// ✅ Rutas de checkout (V1)
+Route::prefix('v1')->group(function () {
+    Route::post('/checkout', [CheckoutController::class, 'createSession']);
 });
->>>>>>> 1cf2757 (Mis cambios para MIBACK)
+
+// ✅ Webhook de Stripe (sin auth, sin CSRF)
+Route::post('/stripe/webhook', [CheckoutController::class, 'webhook']);
+
