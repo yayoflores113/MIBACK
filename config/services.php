@@ -56,7 +56,7 @@ return [
 
 
 // LÍNEA ES LA QUE FALTA
-    'frontend_redirect' => env('FRONTEND_URL', 'http://localhost:5173') . '/auth/callback',
+    'frontend_redirect' => env('FRONTEND_URL', 'https://mifront-6stl.onrender.com') . '/auth/callback',
 
 
 ];
