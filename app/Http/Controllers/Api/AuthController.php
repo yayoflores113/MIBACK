@@ -188,7 +188,7 @@ class AuthController extends Controller
             }
 
             // CAMBIO IMPORTANTE: Redirigir a una ruta específica del frontend
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = env('FRONTEND_URL', 'https://mifront-6stl.onrender.com');
             
             // Codificar datos del usuario en base64 para pasarlos de forma segura
             $userData = base64_encode(json_encode([
@@ -208,7 +208,7 @@ class AuthController extends Controller
                 'trace'   => $e->getTraceAsString(),
             ]);
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = env('FRONTEND_URL', 'https://mifront-6stl.onrender.com');
             
             return redirect("{$frontendUrl}/login?error=auth_failed&provider={$provider}");
         }
