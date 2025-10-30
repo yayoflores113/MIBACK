@@ -1,162 +1,229 @@
-<?php
+import axios from "./lib/axios";
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UniversityController;
-use App\Http\Controllers\Api\CareerController;
-use App\Http\Controllers\Api\CourseController;
-use App\Http\Controllers\Api\PlanController;
-use App\Http\Controllers\Api\TestController;
-use App\Http\Controllers\Api\QuestionController;
-use App\Http\Controllers\Api\AnswerOptionController;
-use App\Http\Controllers\Api\CountryController;
-use App\Http\Controllers\Api\TestAttemptController;
-use App\Http\Controllers\Api\RecommendationController;
-use App\Http\Controllers\Api\SubscriptionController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\FrontController;
-use App\Http\Controllers\Api\FavoriteController;
-use App\Http\Controllers\MetabaseController;
-use App\Http\Controllers\StripeController;
+const base_api_url = "https://miback-1333.onrender.com/api/v1";
 
-use App\Http\Controllers\Api\DailyExerciseController;
-use App\Http\Controllers\Api\Public\LearningPathController;
-use App\Http\Controllers\Api\V1\CheckoutController;
-Route::prefix('v1')->group(function () {
+const Auth = {
+  register: (data) => axios.post(`${base_api_url}/auth/register`, data),
+  login: (data) => axios.post(`${base_api_url}/auth/login`, data),
+  logout: () => axios.post(`${base_api_url}/auth/logout`),
+  me: () => axios.get(`${base_api_url}/auth/me`),
+};
 
-   
+const AdminUsers = {
+  getAll: () => axios.get(`${base_api_url}/admin/users`),
+  getById: (id) => axios.get(`${base_api_url}/admin/users/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/users/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/users/${id}`),
+};
 
-    // ::auth
-    Route::post('auth/login', [AuthController::class, 'login']);
-    Route::post('auth/register', [AuthController::class, 'register']);
+const AdminUniversities = {
+  getAll: () => axios.get(`${base_api_url}/admin/universities`),
+  create: (data) => axios.post(`${base_api_url}/admin/universities`, data),
+  getById: (id) => axios.get(`${base_api_url}/admin/universities/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/universities/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/universities/${id}`),
+};
 
-    // Paises
-    Route::get('/public/countries', [CountryController::class, 'index']);
+const AdminCareers = {
+  getAll: () => axios.get(`${base_api_url}/admin/careers`),
+  create: (data) => axios.post(`${base_api_url}/admin/careers`, data),
+  getById: (id) => axios.get(`${base_api_url}/admin/careers/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/careers/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/careers/${id}`),
+};
 
-    // Ruta para Universidades y Cursos Favoritos
-    Route::get('favorites', [FavoriteController::class, 'index']);
-    Route::post('favorites', [FavoriteController::class, 'store']);   // toggle
-    Route::delete('favorites/{favorite}', [FavoriteController::class, 'destroy']);
+const AdminCourses = {
+  getAll: () => axios.get(`${base_api_url}/admin/courses`),
+  create: (data) => axios.post(`${base_api_url}/admin/courses`, data),
+  getById: (id) => axios.get(`${base_api_url}/admin/courses/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/courses/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/courses/${id}`),
+};
 
-   // SOLUCIÓN: OAuth con middleware 'web' para tener sesión o usar las rutas web.php directamente
-    Route::middleware('web')->group(function () {
-        Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider'])
-            ->whereIn('provider', ['google', 'microsoft']);
+const AdminPlans = { 
+  getAll: () => axios.get(`${base_api_url}/admin/plans`),
+  create: (data) => axios.post(`${base_api_url}/admin/plans`, data),
+  getById: (id) => axios.get(`${base_api_url}/admin/plans/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/plans/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/plans/${id}`),
+};
 
-        Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])
-            ->whereIn('provider', ['google', 'microsoft']);
-    });
+const AdminSubscriptions = {
+  getAll: (params) => axios.get(`${base_api_url}/user/subscriptions`, { params }),
+  getById: (id) => axios.get(`${base_api_url}/user/subscriptions/${id}`),
+  create: (data) => axios.post(`${base_api_url}/admin/subscriptions`, data),
+  update: (id, data) => axios.put(`${base_api_url}/admin/subscriptions/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/subscriptions/${id}`),
+};
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('auth/me',     [AuthController::class, 'me']);
-        Route::post('auth/logout', [AuthController::class, 'logout']); 
-        // Stripe 
-        Route::post('/checkout', [StripeController::class, 'checkout']);
-    });
+const PublicUniversities = {
+  getAll: (quantity) => axios.get(`${base_api_url}/public/universities/${quantity}`),
+  getBySlug: (slug) => axios.get(`${base_api_url}/public/universities/${slug}`),
+};
 
-    // Metabase
-    Route::get('/metabase/dashboard/{id}', [MetabaseController::class, 'getDashboardUrl']);
+const PublicCareers = {
+  getAll: (quantity) => axios.get(`${base_api_url}/public/careers/${quantity}`),
+  getBySlug: (slug) => axios.get(`${base_api_url}/public/careers/${slug}`),
+};
 
+const PublicCourses = {
+  getAll: (quantity = 120, params = {}) =>
+    axios.get(`${base_api_url}/public/courses`, {
+      params: { quantity, ...params },
+    }),
+  getBySlug: (slug) => axios.get(`${base_api_url}/public/courses/${slug}`),
+};
 
-    // ::tests (solo lectura) — PONER ANTES DEL CATCH-ALL
-    Route::get('/public/tests/active', [TestController::class, 'active'])->name('public.tests.active');
-    Route::apiResource('/public/tests',          TestController::class)->only(['index', 'show'])->names('public.tests');
-    Route::apiResource('/public/questions',      QuestionController::class)->only(['index', 'show'])->names('public.questions');
-    Route::apiResource('/public/answer-options', AnswerOptionController::class)->only(['index', 'show'])->names('public.answer-options');
+const PublicPlans = {
+  getAll: (quantity = 4, params = {}) =>
+    axios.get(`${base_api_url}/public/plans`, {
+      params: { quantity, ...params },
+    }),
+  getBySlug: (slug) => axios.get(`${base_api_url}/public/plans/${slug}`),
+};
 
-    // catálogo publico
-    // Universidades
-    Route::get('/public/universities/{quantity}', [FrontController::class, 'universities'])->whereNumber('quantity');
-    Route::get('/public/universities/{slug}',     [FrontController::class, 'universidad'])->where('slug', '^[a-z0-9-]+$');
+const PublicTests = {
+  getActive: () => axios.get(`${base_api_url}/public/tests/active`),
+  getAll: () => axios.get(`${base_api_url}/public/tests`),
+  getById: (id) => axios.get(`${base_api_url}/public/tests/${id}`),
+  getQuestions: (params = {}) => axios.get(`${base_api_url}/public/questions`, { params }),
+  getAnswerOptions: (params = {}) => axios.get(`${base_api_url}/public/answer-options`, { params }),
+};
 
-    // Carreras
-    Route::get('/public/careers/{quantity}', [FrontController::class, 'categorias'])->whereNumber('quantity');
-    Route::get('/public/careers/{slug}',     [FrontController::class, 'categoria'])->where('slug', '^[a-z0-9-]+$');
+const TestAttempts = {
+  create: (data) => axios.post(`${base_api_url}/user/test-attempts`, data),
+  getMy: () => axios.get(`${base_api_url}/user/test-attempts`),
+  getById: (id) => axios.get(`${base_api_url}/user/test-attempts/${id}`),
+  answer: (id, data) => axios.post(`${base_api_url}/user/test-attempts/${id}/answer`, data),
+  finish: (id) => axios.post(`${base_api_url}/user/test-attempts/${id}/finish`),
+  getRecommendations: (id) => axios.get(`${base_api_url}/user/test-attempts/${id}/recommendations`),
+};
 
-    // Cursos
-    Route::get('/public/courses',        [FrontController::class, 'cursos']);
-    Route::get('/public/courses/{slug}', [FrontController::class, 'curso'])->where('slug', '^[a-z0-9-]+$');
+const Favorites = {
+  getAll: (params = {}) => axios.get(`${base_api_url}/favorites`, { params }),
+  toggle: (payload) => axios.post(`${base_api_url}/favorites`, payload),
+};
 
-    // Planes
-    Route::get('/public/plans',        [PlanController::class, 'index']);
-    Route::get('/public/plans/{slug}', [PlanController::class, 'showBySlug'])->where('slug', '^[a-z0-9-]+$');
+// ✅ CORREGIDO: Cambiar de /user a /public
+const PublicLearningPaths = {
+  getAll: () => axios.get(`${base_api_url}/public/learning-paths`),
+  getBySlug: (slug) => axios.get(`${base_api_url}/public/learning-paths/${slug}`),
+};
 
-    // Learning Paths (Rutas de Aprendizaje)
-    Route::get('/public/learning-paths',        [LearningPathController::class, 'index'])->name('public.learning-paths.index');
-    Route::get('/public/learning-paths/{slug}', [LearningPathController::class, 'show'])->where('slug', '^[a-z0-9-]+$')->name('public.learning-paths.show');
+const AdminLearningPaths = {
+  getAll: () => axios.get(`${base_api_url}/admin/learning-paths`),
+  create: (data) => axios.post(`${base_api_url}/admin/learning-paths`, data),
+  getById: (id) => axios.get(`${base_api_url}/admin/learning-paths/${id}`),
+  update: (id, data) => axios.put(`${base_api_url}/admin/learning-paths/${id}`, data),
+  delete: (id) => axios.delete(`${base_api_url}/admin/learning-paths/${id}`),
+};
 
-    // Catch-all: DEBE IR AL FINAL PARA NO INTERCEPTAR RUTAS REALES
-    Route::get('/public/{slug}', [FrontController::class, 'categoria'])->where('slug', '^[a-z0-9-]+$');
+export default {
+  getRegister: Auth.register,
+  getLogin: Auth.login,
+  getLogout: Auth.logout,
+  getMe: Auth.me,
 
-   
+  getUserAll: AdminUsers.getAll,
+  getUserById: AdminUsers.getById,
+  getUserUpdate: (data, id) => AdminUsers.update(id, data),
+  getUserDelete: AdminUsers.delete,
 
-    // Daily Exercises (usuario autenticado)
-    Route::middleware(['auth:sanctum'])->group(function () {
-        Route::get('user/daily-exercise/today', [DailyExerciseController::class, 'getTodayExercise'])->name('user.daily-exercise.today');
-        Route::post('user/daily-exercise/submit', [DailyExerciseController::class, 'submitAnswer'])->name('user.daily-exercise.submit');
-        Route::get('user/streak', [DailyExerciseController::class, 'getUserStreak'])->name('user.streak');
-        Route::get('user/daily-exercise/history', [DailyExerciseController::class, 'getHistory'])->name('user.daily-exercise.history');
-    });
+  getUniversidadesAll: AdminUniversities.getAll,
+  getUniversidadesStore: AdminUniversities.create,
+  getUniversidadesById: AdminUniversities.getById,
+  getUniversidadesUpdate: (data, id) => AdminUniversities.update(id, data),
+  getUniversidadesDeleteById: AdminUniversities.delete,
 
-    // ::user test attempts
-    Route::apiResource('user/test-attempts', TestAttemptController::class)
-        ->only(['index', 'store', 'show', 'destroy'])->names('user.test-attempts');
+  getCarrerasAll: AdminCareers.getAll,
+  getCarrerasStore: AdminCareers.create,
+  getCarrerasShow: AdminCareers.getById,
+  getCarrerasUpdate: (data, id) => AdminCareers.update(id, data),
+  getCarrerasDestroy: AdminCareers.delete,
 
-    Route::post('user/test-attempts/{testAttempt}/answer', [TestAttemptController::class, 'answer'])
-        ->name('user.test-attempts.answer');
-    Route::post('user/test-attempts/{testAttempt}/finish', [TestAttemptController::class, 'finish'])
-        ->name('user.test-attempts.finish');
+  getCursosAll: AdminCourses.getAll,
+  getCursosStore: AdminCourses.create,
+  getCursosShow: AdminCourses.getById,
+  getCursosUpdate: (data, id) => AdminCourses.update(id, data),
+  getCursosDestroy: AdminCourses.delete,
 
-    // Recomendaciones por intento
-    Route::get('user/test-attempts/{testAttempt}/recommendations', [RecommendationController::class, 'byAttempt'])
-        ->name('user.test-attempts.recommendations');
+  getPlanesAll: AdminPlans.getAll,
+  getPlanesStore: AdminPlans.create,
+  getPlanesShow: AdminPlans.getById,
+  getPlanesUpdate: (data, id) => AdminPlans.update(id, data),
+  getPlanesDestroy: AdminPlans.delete,
 
-    // ::subs y pagos (user)
-    Route::apiResource('user/subscriptions', SubscriptionController::class)->only(['index', 'show'])->names('user.subscriptions');
-    Route::apiResource('user/payments',      PaymentController::class)->only(['index', 'show'])->names('user.payments');
+  getSubscriptionsAll: AdminSubscriptions.getAll,
+  getSubscriptionShow: AdminSubscriptions.getById,
+  createSubscription: AdminSubscriptions.create,
+  updateSubscription: (data, id) => AdminSubscriptions.update(id, data),
+  deleteSubscription: AdminSubscriptions.delete,
 
-    
-    
+  getUniversities: PublicUniversities.getAll,
+  getUniversityBySlug: PublicUniversities.getBySlug,
 
-    // Daily Exercises (admin)
-    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-        Route::apiResource('admin/daily-exercises', DailyExerciseController::class)->names('admin.daily-exercises');
-    });
+  getCareers: PublicCareers.getAll,
+  getCareerBySlug: PublicCareers.getBySlug,
 
-    Route::apiResource('admin/universities', UniversityController::class)->names('admin.universities');
-    Route::apiResource('admin/careers',      CareerController::class)->names('admin.careers');
-    Route::apiResource('admin/courses',      CourseController::class)->names('admin.courses');
-    Route::apiResource('admin/plans',        PlanController::class)->names('admin.plans');
+  getCourses: PublicCourses.getAll,
+  getCourseBySlug: PublicCourses.getBySlug,
 
-    Route::apiResource('admin/tests',          TestController::class)->names('admin.tests');
-    Route::apiResource('admin/questions',      QuestionController::class)->names('admin.questions');
-    Route::apiResource('admin/answer-options', AnswerOptionController::class)->names('admin.answer-options');
+  getPlans: PublicPlans.getAll,
+  getPlanBySlug: PublicPlans.getBySlug,
 
-    Route::apiResource('admin/recommendations', RecommendationController::class)->names('admin.recommendations');
+  getActiveTests: PublicTests.getActive,
+  getTests: PublicTests.getAll,
+  getTestById: PublicTests.getById,
+  getQuestions: PublicTests.getQuestions,
+  getAnswerOptions: PublicTests.getAnswerOptions,
 
-    Route::apiResource('admin/subscriptions', SubscriptionController::class)->only(['store', 'update', 'destroy'])->names('admin.subscriptions');
-    Route::apiResource('admin/payments',      PaymentController::class)->only(['store', 'update', 'destroy'])->names('admin.payments');
+  createTestAttempt: TestAttempts.create,
+  getMyTestAttempts: TestAttempts.getMy,
+  getTestAttempt: TestAttempts.getById,
+  answerAttempt: TestAttempts.answer,
+  finishAttempt: TestAttempts.finish,
+  getAttemptRecommendations: TestAttempts.getRecommendations,
 
-    Route::apiResource('admin/users', UserController::class)->only(['index', 'show', 'update', 'destroy'])->names('admin.users');
-    Route::patch('admin/users/{user}/roles',        [UserController::class, 'updateRoles'])->name('admin.users.update-roles');
-    Route::post('admin/users/{user}/deactivate',    [UserController::class, 'deactivate'])->name('admin.users.deactivate');
-    Route::post('admin/users/{user}/activate',      [UserController::class, 'activate'])->name('admin.users.activate');
-    Route::post('admin/users/{user}/revoke-tokens', [UserController::class, 'revokeTokens'])->name('admin.users.revoke-tokens');
-});
-Route::middleware('auth:sanctum')->get('/notificaciones', [NotificacionesController::class, 'getNotificaciones']);
+  getFavorites: Favorites.getAll,
+  toggleFavorite: Favorites.toggle,
 
+  getTodayExercise: () => axios.get(`${base_api_url}/user/daily-exercise/today`),
+  submitExerciseAnswer: (data) => axios.post(`${base_api_url}/user/daily-exercise/submit`, data),
+  getUserStreak: () => axios.get(`${base_api_url}/user/streak`),
+  getUserExerciseHistory: (params = {}) => axios.get(`${base_api_url}/user/daily-exercise/history`, { params }),
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+  getExercisesAll: (params = {}) => axios.get(`${base_api_url}/admin/daily-exercises`, { params }),
+  createExercise: (data) => axios.post(`${base_api_url}/admin/daily-exercises`, data),
+  getExerciseById: (id) => axios.get(`${base_api_url}/admin/daily-exercises/${id}`),
+  updateExercise: (id, data) => axios.put(`${base_api_url}/admin/daily-exercises/${id}`, data),
+  deleteExercise: (id) => axios.delete(`${base_api_url}/admin/daily-exercises/${id}`),
 
-// ✅ Rutas de checkout (V1)
-Route::prefix('v1')->group(function () {
-    Route::post('/checkout', [CheckoutController::class, 'createSession']);
-});
+  // ✅ CORREGIDO: Usar rutas públicas que existen en el backend
+  getLearningPaths: PublicLearningPaths.getAll,
+  getLearningPathBySlug: PublicLearningPaths.getBySlug,
 
-// ✅ Webhook de Stripe (sin auth, sin CSRF)
-Route::post('/stripe/webhook', [CheckoutController::class, 'webhook']);
+  getAdminLearningPaths: AdminLearningPaths.getAll,
+  createLearningPath: AdminLearningPaths.create,
+  getAdminLearningPathById: AdminLearningPaths.getById,
+  updateLearningPath: (data, id) => AdminLearningPaths.update(id, data),
+  deleteLearningPath: AdminLearningPaths.delete,
+};
 
+export {
+  Auth,
+  AdminUsers,
+  AdminUniversities,
+  AdminCareers,
+  AdminCourses,
+  AdminPlans,
+  AdminSubscriptions,
+  PublicUniversities,
+  PublicCareers,
+  PublicCourses,
+  PublicPlans,
+  PublicTests,
+  TestAttempts,
+  Favorites,
+  PublicLearningPaths,
+  AdminLearningPaths,
+};
