@@ -12,9 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-    $middleware->statefulApi(); // <- ESENCIAL para SPA con cookies
-})
-
+        // ✅ Agrega el middleware de CORS
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
+        // Para SPA con cookies
+        $middleware->statefulApi();
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         // Aquí puedes registrar renderables si los necesitas
     })->create();
