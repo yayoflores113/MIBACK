@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,18 +11,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // ✅ Middleware CORS personalizado primero
+        // ✅ Tu middleware CORS personalizado
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceCors::class,
         ]);
-
+        
         // ✅ Middleware de Laravel para estado de sesión y cookies
         $middleware->statefulApi();
-
-        // Opcional: middleware oficial de Laravel CORS al final
-        $middleware->api(append: [
-            \Fruitcake\Cors\HandleCors::class,
-        ]);
+        
+        // ❌ ELIMINA ESTA LÍNEA - No existe el paquete
+        // $middleware->api(append: [
+        //     \Fruitcake\Cors\HandleCors::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
