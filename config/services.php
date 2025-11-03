@@ -38,7 +38,7 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'), // ✅ corregido
     ],
 
     'microsoft' => [
@@ -53,10 +53,7 @@ return [
         'key' => env('STRIPE_KEY', ''),
     ],
 
-
-
-// LÍNEA ES LA QUE FALTA
-    'frontend_redirect' => env('FRONTEND_URL', 'https://mifront-6stl.onrender.com') . '/auth/callback',
-
+    // LÍNEA PARA FRONTEND REDIRECT
+    'frontend_redirect' => env('FRONTEND_URL', 'https://mifront-1.onrender.com') . '/auth/callback',
 
 ];
