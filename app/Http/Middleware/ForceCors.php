@@ -20,3 +20,12 @@ class ForceCors
         }
 
         $response = $next($request);
+
+        // Agrega los headers CORS a la respuesta
+        return $response
+            ->header('Access-Control-Allow-Origin', $request->header('Origin') ?? '*')
+            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
+            ->header('Access-Control-Allow-Credentials', 'true');
+    }
+}
