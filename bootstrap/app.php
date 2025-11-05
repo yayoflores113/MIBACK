@@ -8,6 +8,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
         api: __DIR__ . '/../routes/api.php',
+        apiPrefix: 'api/v1', // ✅ Prefijo completo aquí
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
@@ -17,14 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ForceCors::class,
         ]);
         
-        // ✅ CRÍTICO: Excluir rutas API del CSRF
+        // ✅ Excluir rutas API del CSRF
         $middleware->validateCsrfTokens(except: [
             'api/*',
             '/api/*',
         ]);
         
-        // ❌ QUITAR statefulApi() - Esto activaba CSRF en API
-        // $middleware->statefulApi();
+        // ✅ Middleware web para OAuth (Google, Microsoft)
+        $middleware->web(append: [
+            \Illuminate\Session\Middleware\StartSession::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
