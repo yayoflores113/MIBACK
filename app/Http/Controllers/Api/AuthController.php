@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Http\Controllers\Api;
-
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    /**
+     * Registro con TOKEN
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -36,21 +37,25 @@ class AuthController extends Controller
             $user->assignRole('user');
         }
 
-        // Autenticar automáticamente después del registro
-        Auth::login($user);
-        $request->session()->regenerate();
+        // 🔥 Crear token de Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Cargar roles
+        if (method_exists($user, 'loadMissing')) {
+            $user->loadMissing('roles:id,name');
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Usuario registrado exitosamente',
             'user' => $user,
+            'token' => $token,
             'rol' => 'user',
-            'token' => null, // Añadido para consistencia
         ], 201);
     }
 
     /**
-    * Login con EMAIL/PASSWORD (Sanctum Stateful - NO tokens)
+    * Login con EMAIL/PASSWORD usando TOKENS (no sesiones)
     */
     public function login(Request $request)
     {
@@ -66,42 +71,48 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Intentar autenticar
-        if (Auth::attempt($request->only('email', 'password'))) {
-            $request->session()->regenerate();
-            
-            $user = Auth::user();
-            
-            // Obtener el rol usando Spatie
-            $rol = 'user'; // valor por defecto
-            if (method_exists($user, 'getRoleNames')) {
-                $roleNames = $user->getRoleNames();
-                $rol = $roleNames->first() ?? 'user';
-            }
+        // Buscar usuario por email
+        $user = User::where('email', $request->email)->first();
 
+            // Verificar contraseña
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
-                'success' => true,
-                'message' => 'Logueado exitosamente',
-                'user' => $user,
-                'rol' => $rol,
-                'token' => null, // Esto evita el "undefined" en frontend
-            ], 200);
+                'success' => false,
+                'message' => 'Correo o Contraseña incorrectos'
+            ], 401);
+        }
+
+        // 🔥 Crear token de Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Obtener el rol usando Spatie
+        $rol = 'user'; // valor por defecto
+        if (method_exists($user, 'getRoleNames')) {
+            $roleNames = $user->getRoleNames();
+            $rol = $roleNames->first() ?? 'user';
+        }
+
+        // Cargar roles
+        if (method_exists($user, 'loadMissing')) {
+            $user->loadMissing('roles:id,name');
         }
 
         return response()->json([
-            'success' => false,
-            'message' => 'Correo o Contraseña incorrectos'
-        ], 401);
+            'success' => true,
+            'message' => 'Logueado exitosamente',
+            'user' => $user,
+            'token' => $token,
+            'rol' => $rol,
+        ], 200);
     }
 
     /**
-     * Logout (Invalida la sesión)
+     * Logout (Elimina el token actual)
      */
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Eliminar el token actual del usuario autenticado
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
@@ -127,7 +138,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Callback OAuth - Autentica por SESIÓN (NO tokens)
+     * Callback OAuth - Retorna TOKEN (no sesión)
      */
     public function handleProviderCallback(Request $request, string $provider)
     {
@@ -176,15 +187,36 @@ class AuthController extends Controller
                 }
             }
 
-            // CRÍTICO: Autenticar por SESIÓN (Sanctum Stateful)
-            Auth::login($user);
-            $request->session()->regenerate();
+            // 🔥 Crear token de Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-            // CAMBIO IMPORTANTE: Redirigir a una ruta específica del frontend
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            // Obtener rol
+            $rol = 'user';
+            if (method_exists($user, 'getRoleNames')) {
+                $roleNames = $user->getRoleNames();
+                $rol = $roleNames->first() ?? 'user';
+            }
 
-            // Solo redirige con un flag de éxito
-            return redirect("{$frontendUrl}/auth/callback?success=true&new=" . ($wasNew ? '1' : '0'));
+            // Cargar roles
+            if (method_exists($user, 'loadMissing')) {
+                $user->loadMissing('roles:id,name');
+            }
+
+            // Redirigir al frontend con el token
+            $frontendUrl = env('FRONTEND_URL', 'https://mifront-1.onrender.com');
+            
+            // Codificar datos para pasarlos de forma segura
+            $userData = base64_encode(json_encode([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'provider' => $provider,
+                'new' => $wasNew,
+                'rol' => $rol,
+                'token' => $token, // 🔥 IMPORTANTE: Incluir el token
+            ]));
+
+            return redirect("{$frontendUrl}/auth/callback?data={$userData}");
 
         } catch (\Throwable $e) {
             \Log::error("OAuth {$provider} error", [
@@ -192,7 +224,7 @@ class AuthController extends Controller
                 'trace'   => $e->getTraceAsString(),
             ]);
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = env('FRONTEND_URL', 'https://mifront-1.onrender.com');
 
             return redirect("{$frontendUrl}/login?error=auth_failed&provider={$provider}");
         }
@@ -218,6 +250,13 @@ class AuthController extends Controller
             $user->loadMissing('roles:id,name');
         }
 
+        // Obtener rol
+        $rol = 'user';
+        if (method_exists($user, 'getRoleNames')) {
+            $roleNames = $user->getRoleNames();
+            $rol = $roleNames->first() ?? 'user';
+        }
+
         return response()->json([
             'success' => true,
             'user' => [
@@ -229,6 +268,7 @@ class AuthController extends Controller
                     'name' => $r->name,
                 ])->values(),
             ],
+            'rol' => $rol,
         ], 200);
     }
 }

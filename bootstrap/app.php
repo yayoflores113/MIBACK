@@ -12,9 +12,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-    $middleware->statefulApi(); // <- ESENCIAL para SPA con cookies
-})
+        // ✅ Middleware CORS personalizado primero
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ForceCors::class,
+        ]);
 
+        // ✅ Middleware de Laravel para estado de sesión y cookies
+        $middleware->statefulApi();
+
+        // ✅ Middleware oficial de Laravel (reemplazo de Fruitcake)
+        $middleware->api(append: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Aquí puedes registrar renderables si los necesitas
-    })->create();
+        //
+    })
+    ->create();

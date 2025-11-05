@@ -1,13 +1,14 @@
 <?php
-
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'auth/*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
     
     'allowed_methods' => ['*'],
     
-    // Orígenes explícitos de Vite (tanto en producción como en local)
     'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:5173'),
+        'https://mifront-6stl.onrender.com',
+        'https://mifront-1.onrender.com',
+        'http://localhost:5173', // Para desarrollo local
+        'http://localhost:3000',
     ],
     
     'allowed_origins_patterns' => [],
@@ -18,6 +19,5 @@ return [
     
     'max_age' => 0,
     
-    // Indica si las cookies y credenciales son soportadas
     'supports_credentials' => true,
 ];
