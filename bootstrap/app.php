@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,18 +12,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // ✅ Tu middleware CORS personalizado
+        // ✅ Middleware CORS personalizado
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceCors::class,
         ]);
         
-        // ✅ Middleware de Laravel para estado de sesión y cookies
-        $middleware->statefulApi();
+        // ✅ CRÍTICO: Excluir rutas API del CSRF
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            '/api/*',
+        ]);
         
-        // ❌ ELIMINA ESTA LÍNEA - No existe el paquete
-        // $middleware->api(append: [
-        //     \Fruitcake\Cors\HandleCors::class,
-        // ]);
+        // ❌ QUITAR statefulApi() - Esto activaba CSRF en API
+        // $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
