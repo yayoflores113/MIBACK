@@ -7,6 +7,7 @@ return [
     'allowed_origins' => [
         'https://mifront-6stl.onrender.com',
         'https://mifront-1.onrender.com',
+        'https://mifront-22.onrender.com',
         'http://localhost:5173', // Para desarrollo local
         'http://localhost:3000',
     ],
