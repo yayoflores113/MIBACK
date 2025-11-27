@@ -53,6 +53,13 @@ return [
         'key' => env('STRIPE_KEY', ''),
     ],
 
+    'superset' => [
+        'base_url'  => env('SUPERSET_BASE_URL', 'http://localhost:8088'),
+        'username'  => env('SUPERSET_USERNAME'),
+        'password'  => env('SUPERSET_PASSWORD'),
+        'dashboard_id' => env('SUPERSET_DASHBOARD_ID'),
+    ],
+
     // LÍNEA PARA FRONTEND REDIRECT
     'frontend_redirect' => env('FRONTEND_URL', 'https://mifront-1.onrender.com') . '/auth/callback',
 

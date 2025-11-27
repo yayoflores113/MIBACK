@@ -23,6 +23,8 @@ use App\Http\Controllers\StripeController;
 use App\Http\Controllers\Api\DailyExerciseController;
 use App\Http\Controllers\Api\Public\LearningPathController;
 use App\Http\Controllers\Api\V1\CheckoutController;
+use App\Http\Controllers\SupersetController;
+
 
 // ========================================
 // 🔐 AUTH (públicas)
@@ -50,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Países
 Route::get('public/countries', [CountryController::class, 'index']);
+
+//Superset Guest Token
+Route::get('/superset/guest-token', [SupersetController::class, 'getGuestToken']);
 
 // Tests (solo lectura)
 Route::get('public/tests/active', [TestController::class, 'active'])->name('public.tests.active');
